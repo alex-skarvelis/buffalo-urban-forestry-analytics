@@ -1,0 +1,81 @@
+name: Full-Stack Data Pipeline Validation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-pipeline:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: tree_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Clone Repository Code
+      uses: actions/checkout@v3
+
+    - name: Install PostgreSQL Command Line Client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Set Up Python Runtime
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Data Science Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas seaborn matplotlib
+
+    - name: Provision Mock Structural Schema
+      env:
+        PGPASSWORD: test_password
+      run: |
+        psql -h localhost -U test_user -d tree_db -c "
+          CREATE TABLE tree_inventory (
+            editing TEXT, botanical_name TEXT, common_name TEXT, dbh TEXT,
+            total_yearly_eco_benefits TEXT, stormwater_benefits TEXT, stormwater_gallons_saved TEXT,
+            greenhouse_co2_benefits TEXT, co2_avoided TEXT, co2_sequestered TEXT,
+            energy_benefits TEXT, kwh_saved TEXT, therms_saved TEXT,
+            air_quality_benefits TEXT, pollutants_saved TEXT, property_benefits TEXT,
+            leaf_surface_area TEXT, address TEXT, street TEXT, side TEXT,
+            site TEXT, council_district TEXT, park_name TEXT, latitude TEXT,
+            longitude TEXT, site_ID TEXT, location_degrees TEXT, location_point TEXT
+          );
+          -- Insert a valid data row to fulfill evaluation constraints
+          INSERT INTO tree_inventory (botanical_name, dbh, total_yearly_eco_benefits, property_benefits)
+          VALUES ('Maclura pomnifera', '5.0', '$50.00', '$10.00');
+        "
+
+    - name: Execute SQL Analytical Engine Staging Test
+      env:
+        PGPASSWORD: test_password
+      run: |
+        psql -h localhost -U test_user -d tree_db -f scripts/urban_forestry_analysis.sql
+
+    - name: Generate Mock CSV for Script Verification
+      run: |
+        # Creates a mock CSV file so the Python script has an injection target to test
+        echo "tree_species,sample_size,avg_dbh_inches,avg_yearly_benefits_usd,lifecycle_efficiency_usd_per_inch" > species_averages.csv
+        echo "Maclura pomnifera,14,3.29,85.37,26.26" >> species_averages.csv
+
+    - name: Execute Python Seaborn Visualization Test
+      run: |
+        python visualizations/plot_trend.py
