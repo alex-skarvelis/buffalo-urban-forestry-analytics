@@ -59,9 +59,6 @@ jobs:
             site TEXT, council_district TEXT, park_name TEXT, latitude TEXT,
             longitude TEXT, site_ID TEXT, location_degrees TEXT, location_point TEXT
           );
-          -- Insert a valid data row to fulfill evaluation constraints
-          INSERT INTO tree_inventory (botanical_name, dbh, total_yearly_eco_benefits, property_benefits)
-          VALUES ('Maclura pomnifera', '5.0', '$50.00', '$10.00');
         "
 
     - name: Execute SQL Analytical Engine Staging Test
