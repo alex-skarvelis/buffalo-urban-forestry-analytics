@@ -59,10 +59,20 @@ jobs:
             site TEXT, council_district TEXT, park_name TEXT, latitude TEXT,
             longitude TEXT, site_ID TEXT, location_degrees TEXT, location_point TEXT
           );
-          -- Insert a valid data row to fulfill evaluation constraints
-          INSERT INTO tree_inventory (botanical_name, dbh, total_yearly_eco_benefits, property_benefits)
-          VALUES ('Maclura pomnifera', '5.0', '$50.00', '$10.00');
         "
+    - name: Fetch Live OpenData Buffalo Tree Inventory Dataset
+      run: |
+          echo "Downloading full live civic data repository..."
+          curl -L "https://buffalony.gov" -o tree_inventory_full.csv
+          echo "Dataset successfully downloaded. Total rows fetched:"
+          wc -l tree_inventory_full.csv
+
+    - name: Bulk Import Live Data into PostgreSQL
+      run: |
+          echo "Importing thousands of live tree records into tree_db..."
+          export PGPASSWORD='test_password'
+          psql -h localhost -U test_user -d tree_db -c "\copy tree_inventory FROM 'tree_inventory_full.csv' WITH CSV HEADER;"
+          echo "Data ingestion complete."
 
     - name: Execute SQL Analytical Engine Staging Test
       env:
