@@ -75,7 +75,6 @@ jobs:
           psql -h localhost -U test_user -d tree_db -c "\copy tree_inventory FROM 'tree_inventory_full.csv' WITH CSV HEADER;"
           echo "Data ingestion complete."
 
-
     - name: Execute SQL Analytical Engine Staging Test
       env:
         PGPASSWORD: test_password
