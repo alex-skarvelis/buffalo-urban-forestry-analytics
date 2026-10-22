@@ -99,3 +99,8 @@ jobs:
     - name: Execute Python Seaborn Visualization Test
       run: |
         python visualizations/plot_trend.py
+    - name: Upload Generated Regression Chart
+      uses: actions/upload-artifact@v4
+      with:
+          name: regression-analysis-chart
+          path: species_size_vs_benefits_regression.png
