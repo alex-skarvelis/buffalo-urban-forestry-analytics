@@ -61,14 +61,21 @@ jobs:
           );
         "
 
-    - name: Fetch Live OpenData Buffalo Tree Inventory Dataset
+    - name: Clone Repository Code
+      uses: actions/checkout@v3
+
+    - name: Verify Staged Civic Dataset
       run: |
-          echo "Downloading full live civic data repository..."
-          curl -fsSL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-            "https://buffalony.gov" \
-            -o tree_inventory_full.csv
-          echo "Dataset successfully downloaded. Total rows fetched:"
+          echo "Verifying local data repository presence..."
           wc -l tree_inventory_full.csv
+
+    - name: Bulk Import Data into PostgreSQL
+      run: |
+          echo "Importing stored tree records into tree_db..."
+          export PGPASSWORD='test_password'
+          psql -h localhost -U test_user -d tree_db -c "\copy tree_inventory FROM 'tree_inventory_full.csv' WITH CSV HEADER;"
+          echo "Data ingestion complete."
+
 
     - name: Bulk Import Live Data into PostgreSQL
       run: |
